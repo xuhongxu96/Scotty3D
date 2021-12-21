@@ -345,6 +345,35 @@ public:
         Vec3 center() const;
         // Computes the centroid of the loop of the vertex
         Vec3 neighborhood_center() const;
+        // Loop for each neighbor
+        template<class F> bool foreach_neighbor(F&& f) {
+            // Iterate over neighbors.
+            HalfedgeRef h = _halfedge;
+            do {
+                bool res = f(h->next()->vertex());
+                if(!res) return false;
+                h = h->twin()->next();
+            } while(h != _halfedge);
+            return true;
+        }
+        // Loop for each neighbor
+        template<class F> bool foreach_neighbor(F&& f) const {
+            return const_cast<Vertex*>(this)->foreach_neighbor(f);
+        }
+        template<class F> bool foreach_halfedges(F&& f) {
+            // Iterate over neighbors.
+            HalfedgeRef h = _halfedge;
+            do {
+                bool res = f(h);
+                if(!res) return false;
+                h = h->twin()->next();
+            } while(h != _halfedge);
+            return true;
+        }
+        // Loop for each neighbor
+        template<class F> bool foreach_halfedges(F&& f) const {
+            return const_cast<Vertex*>(this)->foreach_halfedges(f);
+        }
         // Returns an id unique to this vertex
         unsigned int id() const {
             return _id;
@@ -491,6 +520,20 @@ public:
             _vertex = vertex;
             _edge = edge;
             _face = face;
+        }
+
+        HalfedgeRef loop_to_prev() {
+            HalfedgeRef oldp;
+            auto p = next();
+            while(p->id() != id()) {
+                oldp = p;
+                p = p->next();
+            }
+            return oldp;
+        }
+
+        HalfedgeCRef loop_to_prev() const {
+            return const_cast<Halfedge*>(this)->loop_to_prev();
         }
 
     private:

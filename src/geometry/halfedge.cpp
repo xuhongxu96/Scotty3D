@@ -102,15 +102,21 @@ Vec3 Halfedge_Mesh::Vertex::neighborhood_center() const {
     Vec3 c;
     float d = 0.0f; // degree (i.e., number of neighbors)
 
-    // Iterate over neighbors.
-    HalfedgeCRef h = _halfedge;
-    do {
-        // Add the contribution of the neighbor,
-        // and increment the number of neighbors.
-        c += h->next()->vertex()->pos;
+    foreach_neighbor([&](VertexCRef v) {
+        c += v->pos;
         d += 1.0f;
-        h = h->twin()->next();
-    } while(h != _halfedge);
+        return true;
+    });
+
+    //// Iterate over neighbors.
+    // HalfedgeCRef h = _halfedge;
+    // do {
+    //    // Add the contribution of the neighbor,
+    //    // and increment the number of neighbors.
+    //    c += h->next()->vertex()->pos;
+    //    d += 1.0f;
+    //    h = h->twin()->next();
+    //} while(h != _halfedge);
 
     c /= d; // compute the average
     return c;
@@ -378,7 +384,7 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
     std::unordered_map<VertexRef, std::set<HalfedgeRef>> v_accessible;
     std::unordered_map<EdgeRef, std::set<HalfedgeRef>> e_accessible;
     std::unordered_map<FaceRef, std::set<HalfedgeRef>> f_accessible;
-    std::set<HalfedgeRef> permutation;
+    std::unordered_map<HalfedgeRef, HalfedgeRef> permutation;
 
     // Check valid halfedge permutation
     for(HalfedgeRef h = halfedges_begin(); h != halfedges_end(); h++) {
@@ -403,7 +409,7 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
 
         // Check whether each halfedge's next points to a unique halfedge
         if(permutation.find(h->next()) == permutation.end()) {
-            permutation.insert(h->next());
+            permutation.insert({h->next(), h});
         } else {
             return {{h->next(), "A halfedge is the next of multiple halfedges!"}};
         }
