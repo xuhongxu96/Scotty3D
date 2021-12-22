@@ -1147,8 +1147,35 @@ void Halfedge_Mesh::loop_subdivide() {
     //    At this point, we also want to mark each vertex as being a vertex of the
     //    original mesh. Use Vertex::is_new for this.
 
+    for(auto& v : vertices) {
+        v.new_pos = Vec3(0, 0, 0);
+        float n = 0.f;
+        v.foreach_neighbor([&](VertexRef nv) {
+            v.new_pos += nv->pos;
+            ++n;
+            return true;
+        });
+        float u = n == 3 ? 3.f / 16.f : 3.f / (8.f * n);
+        v.new_pos = v.new_pos * u + v.pos * (1.f - n * u);
+        v.is_new = false;
+    }
+
     // Next, compute the subdivided vertex positions associated with edges, and
     // store them in Edge::new_pos.
+    for(auto& e : edges) {
+        auto h = e.halfedge();
+        auto hp = h->loop_to_prev();
+        auto ht = h->twin();
+        auto htp = ht->loop_to_prev();
+
+        auto A = h->vertex();
+        auto B = ht->vertex();
+        auto C = hp->vertex();
+        auto D = htp->vertex();
+
+        e.new_pos = 3.f / 8.f * (A->pos + B->pos) + 1.f / 8.f * (C->pos + D->pos);
+        e.is_new = false;
+    }
 
     // Next, we're going to split every edge in the mesh, in any order.
     // We're also going to distinguish subdivided edges that came from splitting
@@ -1156,10 +1183,53 @@ void Halfedge_Mesh::loop_subdivide() {
     // Note that in this loop, we only want to iterate over edges of the original mesh.
     // Otherwise, we'll end up splitting edges that we just split (and the
     // loop will never end!)
+    {
+        EdgeRef e = edges_begin();
+        size_t n = n_edges();
+        for(size_t i = 0; i < n; ++i) {
+            EdgeRef next = e;
+            ++next;
+
+            auto h = e->halfedge();
+            auto endv0 = h->vertex(), endv1 = h->twin()->vertex();
+
+            if(!e->is_new) {
+                auto midv = *split_edge(e);
+
+                midv->foreach_halfedges([&](HalfedgeRef hv) {
+                    auto vn = hv->twin()->vertex();
+                    if(vn != endv0 && vn != endv1) {
+                        hv->edge()->is_new = true;
+                    }
+                    return true;
+                });
+
+                midv->pos = e->new_pos;
+                midv->is_new = true;
+            }
+
+            e = next;
+        }
+    }
 
     // Now flip any new edge that connects an old and new vertex.
+    for(auto e = edges_begin(); e != edges_end(); ++e) {
+        if(!e->is_new) continue;
+
+        auto h = e->halfedge();
+        auto v0 = h->vertex();
+        auto v1 = h->twin()->vertex();
+
+        if(v0->is_new != v1->is_new) {
+            flip_edge(e);
+        }
+    }
 
     // Finally, copy new vertex positions into the Vertex::pos.
+    for(auto& v : vertices) {
+        if(v.is_new) continue;
+        v.pos = v.new_pos;
+    }
 }
 
 /*
