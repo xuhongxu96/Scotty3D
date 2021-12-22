@@ -1041,6 +1041,29 @@ void Halfedge_Mesh::linear_subdivide_positions() {
     // For each face, assign the centroid (i.e., arithmetic mean)
     // of the original vertex positions to Face::new_pos. Note
     // that in general, NOT all faces will be triangles!
+
+    for(auto& f : faces) {
+        f.new_pos = Vec3(0, 0, 0);
+
+        float n = 0.f;
+        auto h = f.halfedge();
+        do {
+            f.new_pos += h->vertex()->pos;
+            ++n;
+            h = h->next();
+        } while(h != f.halfedge());
+        f.new_pos /= n;
+    }
+
+    for(auto& e : edges) {
+        auto h = e.halfedge();
+        auto ht = h->twin();
+        e.new_pos = (h->vertex()->pos + ht->vertex()->pos) / 2.f;
+    }
+
+    for(auto& v : vertices) {
+        v.new_pos = v.pos;
+    }
 }
 
 /*
