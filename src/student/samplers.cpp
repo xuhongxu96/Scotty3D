@@ -6,12 +6,14 @@ namespace Samplers {
 
 Vec2 Rect::sample() const {
 
-    // TODO (PathTracer): Task 1
+    // (PathTracer): Task 1
 
     // Generate a uniformly random point on a rectangle of size size.x * size.y
     // Tip: RNG::unit()
+    auto x = RNG::unit() * size.x;
+    auto y = RNG::unit() * size.y;
 
-    return Vec2{};
+    return Vec2{x, y};
 }
 
 Vec3 Sphere::Uniform::sample() const {

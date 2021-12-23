@@ -8,7 +8,7 @@ namespace PT {
 
 Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
 
-    // TODO (PathTracer): Task 1
+    // (PathTracer): Task 1
 
     // Generate a ray that uniformly samples pixel (x,y) and return the incoming light.
     // The following code generates a ray at the bottom left of the pixel every time.
@@ -16,14 +16,30 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     // Tip: Samplers::Rect
     // Tip: log_ray is useful for debugging
 
-    Vec2 xy((float)x, (float)y);
     Vec2 wh((float)out_w, (float)out_h);
+    Vec2 xy((float)x, (float)y);
 
-    Ray ray = camera.generate_ray(xy / wh);
-    ray.depth = max_depth;
+    Spectrum emissive, reflected;
 
-    // Pathtracer::trace() returns the incoming light split into emissive and reflected components.
-    auto [emissive, reflected] = trace(ray);
+    for(size_t i = 0; i < n_samples; ++i) {
+        Samplers::Rect rect;
+        Vec2 sample_offset = rect.sample();
+
+        Ray ray = camera.generate_ray((xy + sample_offset) / wh - .5f);
+        ray.depth = max_depth;
+
+        if(RNG::coin_flip(0.0005f)) log_ray(ray, 10.0f);
+
+        // Pathtracer::trace() returns the incoming light split into emissive and reflected
+        // components.
+        auto [emissive_i, reflected_i] = trace(ray);
+        emissive += emissive_i;
+        reflected += reflected_i;
+    }
+
+    emissive = emissive / static_cast<float>(n_samples);
+    reflected = reflected / static_cast<float>(n_samples);
+
     return emissive + reflected;
 }
 
@@ -78,7 +94,7 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
 
     // (2) Otherwise, we should randomly choose whether we get our sample from `BSDF::scatter`
     // or `Pathtracer::sample_area_lights`. Note that `Pathtracer::sample_area_lights` returns
-    // a world-space direction pointing toward an area light. Choose between the strategies 
+    // a world-space direction pointing toward an area light. Choose between the strategies
     // with equal probability.
 
     // (3) Create a new world-space ray and call Pathtracer::trace() to get incoming light. You
