@@ -16,7 +16,7 @@ BBox Sphere::bbox() const {
 
 Trace Sphere::hit(const Ray& ray) const {
 
-    // TODO (PathTracer): Task 2
+    // (PathTracer): Task 2
     // Intersect this ray with a sphere of radius Sphere::radius centered at the origin.
 
     // If the ray intersects the sphere twice, ret should
@@ -26,11 +26,32 @@ Trace Sphere::hit(const Ray& ray) const {
     // return that one!
 
     Trace ret;
+    ret.hit = false;
+
+    float a = ray.dir.norm_squared();
+    float b = 2.f * (dot(ray.point, ray.dir));
+    float c = ray.point.norm_squared() - radius * radius;
+
+    float delta = b * b - 4 * a * c;
+    if(delta < 0) {
+        return ret;
+    }
+
+    delta = sqrtf(delta);
+
+    float t = (-b - delta) / a / 2.f;
+    if(t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
+        t = (-b + delta) / a / 2.f;
+        if(t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
+            return ret;
+        }
+    }
+
     ret.origin = ray.point;
-    ret.hit = false;       // was there an intersection?
-    ret.distance = 0.0f;   // at what distance did the intersection occur?
-    ret.position = Vec3{}; // where was the intersection?
-    ret.normal = Vec3{};   // what was the surface normal at the intersection?
+    ret.hit = true;                         // was there an intersection?
+    ret.distance = t;                       // at what distance did the intersection occur?
+    ret.position = ray.point + t * ray.dir; // where was the intersection?
+    ret.normal = ret.position.unit();       // what was the surface normal at the intersection?
     return ret;
 }
 
