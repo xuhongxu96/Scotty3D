@@ -6,13 +6,22 @@ namespace PT {
 
 BBox Triangle::bbox() const {
 
-    // TODO (PathTracer): Task 2
+    // (PathTracer): Task 2
     // Compute the bounding box of the triangle.
 
     // Beware of flat/zero-volume boxes! You may need to
     // account for that here, or later on in BBox::intersect.
 
     BBox box;
+
+    Vec3 v_0 = vertex_list[v0].position;
+    Vec3 v_1 = vertex_list[v1].position;
+    Vec3 v_2 = vertex_list[v2].position;
+
+    box.enclose(v_0);
+    box.enclose(v_1);
+    box.enclose(v_2);
+
     return box;
 }
 
@@ -22,20 +31,39 @@ Trace Triangle::hit(const Ray& ray) const {
     Tri_Mesh_Vert v_0 = vertex_list[v0];
     Tri_Mesh_Vert v_1 = vertex_list[v1];
     Tri_Mesh_Vert v_2 = vertex_list[v2];
-    (void)v_0;
-    (void)v_1;
-    (void)v_2;
 
-    // TODO (PathTracer): Task 2
+    // (PathTracer): Task 2
     // Intersect the ray with the triangle defined by the three vertices.
 
     Trace ret;
+    ret.hit = false;
+
+    auto s = ray.point - v_0.position;
+    auto e1 = v_1.position - v_0.position;
+    auto e2 = v_2.position - v_0.position;
+
+    auto coef = dot(cross(e1, ray.dir), e2);
+    if(coef == 0) {
+        return ret;
+    }
+
+    coef = 1.f / coef;
+
+    auto u = coef * (-dot(cross(s, e2), ray.dir));
+    auto v = coef * (dot(cross(e1, ray.dir), s));
+    auto t = coef * (-dot(cross(s, e2), e1));
+
+    if(u < 0 || v < 0 || u + v > 1 || t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
+        return ret;
+    }
+
     ret.origin = ray.point;
-    ret.hit = false;       // was there an intersection?
-    ret.distance = 0.0f;   // at what distance did the intersection occur?
-    ret.position = Vec3{}; // where was the intersection?
-    ret.normal = Vec3{};   // what was the surface normal at the intersection?
-                           // (this should be interpolated between the three vertex normals)
+    ret.hit = true;                 // was there an intersection?
+    ret.distance = t;               // at what distance did the intersection occur?
+    ret.position = u * e1 + v * e2; // where was the intersection?
+    ret.normal =
+        cross(e1, e2).unit(); // what was the surface normal at the intersection?
+                              // (this should be interpolated between the three vertex normals)
     return ret;
 }
 
