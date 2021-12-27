@@ -77,7 +77,7 @@ struct BBox {
         }
     }
 
-    // TODO (PathTracer): see student/bbox.cpp
+    // (PathTracer): see student/bbox.cpp
     bool hit(const Ray& ray, Vec2& times) const;
 
     /// Get the eight corner points of the bounding box
