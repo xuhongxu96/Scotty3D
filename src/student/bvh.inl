@@ -2,6 +2,7 @@
 #include "../rays/bvh.h"
 #include "debug.h"
 #include <cmath>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <stack>
@@ -64,7 +65,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
             // init buckets
             BBox bucket_boxes[N_BUCKET];
             size_t bucket_prim_counts[N_BUCKET];
-            memset(bucket_prim_counts, 0, sizeof(size_t) * N_BUCKET);
+            std::memset(bucket_prim_counts, 0, sizeof(size_t) * N_BUCKET);
 
             float min_x = full_box.min.data[axis];
             float max_x = full_box.max.data[axis];
