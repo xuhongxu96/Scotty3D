@@ -41,9 +41,10 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     // primitives.
     static constexpr size_t N_BUCKET = 16;
 
-    std::function<size_t(std::vector<Primitive>::iterator, std::vector<Primitive>::iterator)>
-        partition_prims = [&partition_prims, this](std::vector<Primitive>::iterator begin,
-                                                   std::vector<Primitive>::iterator end) -> size_t {
+    using iterator_type = decltype(primitives.begin());
+
+    std::function<size_t(iterator_type, iterator_type)> partition_prims =
+        [&partition_prims, this](iterator_type begin, iterator_type end) -> size_t {
         size_t begin_i = begin - primitives.begin();
 
         BBox full_box;
