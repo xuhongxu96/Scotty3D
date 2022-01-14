@@ -46,7 +46,8 @@ struct Spectrum {
 
     static Spectrum direction(Vec3 v) {
         v.normalize();
-        Spectrum s(std::abs(v.x), std::abs(v.y), std::abs(v.z));
+        // Spectrum s(std::abs(v.x), std::abs(v.y), std::abs(v.z));
+        Spectrum s(v.x / 2 + .5f, v.y / 2 + .5f, v.z / 2 + .5f);
         s.to_linear();
         return s;
     }

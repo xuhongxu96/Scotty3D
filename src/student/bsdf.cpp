@@ -31,33 +31,33 @@ static Vec3 refract(Vec3 out_dir, float index_of_refraction, bool& was_internal)
 
 Scatter BSDF_Lambertian::scatter(Vec3 out_dir) const {
 
-    // TODO (PathTracer): Task 4
+    // (PathTracer): Task 4
 
     // Sample the BSDF distribution using the cosine-weighted hemisphere sampler.
     // You can use BSDF_Lambertian::evaluate() to compute attenuation.
 
     Scatter ret;
-    ret.direction = Vec3{};
-    ret.attenuation = Spectrum{};
+    ret.direction = -sampler.sample();
+    ret.attenuation = evaluate(out_dir, ret.direction);
     return ret;
 }
 
 Spectrum BSDF_Lambertian::evaluate(Vec3 out_dir, Vec3 in_dir) const {
 
-    // TODO (PathTracer): Task 4
+    // (PathTracer): Task 4
 
     // Compute the ratio of reflected/incoming radiance when light from in_dir
     // is reflected through out_dir: albedo * cos(theta).
 
-    return Spectrum{};
+    return albedo * -in_dir.y;
 }
 
 float BSDF_Lambertian::pdf(Vec3 out_dir, Vec3 in_dir) const {
 
-    // TODO (PathTracer): Task 4
+    // (PathTracer): Task 4
 
     // Compute the PDF for sampling in_dir from the cosine-weighted hemisphere distribution.
-    return 0.0f;
+    return 1.f / 2.f / PI_F;
 }
 
 Scatter BSDF_Mirror::scatter(Vec3 out_dir) const {
