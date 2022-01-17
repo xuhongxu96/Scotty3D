@@ -43,24 +43,23 @@ Trace Triangle::hit(const Ray& ray) const {
     auto e2 = v_2.position - v_0.position;
 
     auto coef = dot(cross(e1, ray.dir), e2);
-    if(coef == 0) {
-        return ret;
-    }
+    if(coef == 0) return ret;
 
-    coef = 1.f / coef;
+    auto u = (-dot(cross(s, e2), ray.dir)) / coef;
+    if(u < 0) return ret;
 
-    auto u = coef * (-dot(cross(s, e2), ray.dir));
-    auto v = coef * (dot(cross(e1, ray.dir), s));
-    auto t = coef * (-dot(cross(s, e2), e1));
+    auto v = (dot(cross(e1, ray.dir), s)) / coef;
+    if(v < 0 || u + v > 1) return ret;
 
-    if(u < 0 || v < 0 || u + v > 1 || t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
+    auto t = (-dot(cross(s, e2), e1)) / coef;
+    if(t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
         return ret;
     }
 
     ret.origin = ray.point;
-    ret.hit = true;                 // was there an intersection?
-    ret.distance = t;               // at what distance did the intersection occur?
-    ret.position = u * e1 + v * e2; // where was the intersection?
+    ret.hit = true;           // was there an intersection?
+    ret.distance = t;         // at what distance did the intersection occur?
+    ret.position = ray.at(t); // where was the intersection?
     ret.normal =
         cross(e1, e2).unit(); // what was the surface normal at the intersection?
                               // (this should be interpolated between the three vertex normals)

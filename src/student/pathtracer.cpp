@@ -73,7 +73,7 @@ Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
     // by Pathtracer::trace()), as the direct component will be computed in
     // Pathtracer::sample_direct_lighting().
 
-    Spectrum radiance = indirect * scatter.attenuation;
+    Spectrum radiance = indirect * hit.bsdf.evaluate(hit.out_dir, scatter.direction);
     return radiance;
 }
 
@@ -171,7 +171,7 @@ std::pair<Spectrum, Spectrum> Pathtracer::trace(const Ray& ray) {
                         out_dir, result.normal,   ray.depth};
 
     // Sample and return light reflected through the intersection
-    return {{}, sample_direct_lighting(hit)};
+    return {{}, sample_direct_lighting(hit) + sample_indirect_lighting(hit)};
 }
 
 } // namespace PT

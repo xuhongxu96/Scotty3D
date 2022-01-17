@@ -38,7 +38,7 @@ Scatter BSDF_Lambertian::scatter(Vec3 out_dir) const {
 
     Scatter ret;
     ret.direction = -sampler.sample();
-    ret.attenuation = evaluate(out_dir, ret.direction);
+    ret.attenuation = evaluate(Vec3(0.f, 1.f, 0.f), ret.direction);
     return ret;
 }
 
@@ -49,7 +49,7 @@ Spectrum BSDF_Lambertian::evaluate(Vec3 out_dir, Vec3 in_dir) const {
     // Compute the ratio of reflected/incoming radiance when light from in_dir
     // is reflected through out_dir: albedo * cos(theta).
 
-    return albedo * -in_dir.y;
+    return albedo * -in_dir.y * out_dir.y;
 }
 
 float BSDF_Lambertian::pdf(Vec3 out_dir, Vec3 in_dir) const {
