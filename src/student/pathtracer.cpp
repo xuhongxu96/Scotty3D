@@ -73,7 +73,7 @@ Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
     // by Pathtracer::trace()), as the direct component will be computed in
     // Pathtracer::sample_direct_lighting().
 
-    Spectrum radiance = indirect * hit.bsdf.evaluate(hit.out_dir, scatter.direction);
+    Spectrum radiance = indirect * scatter.attenuation;
     return radiance;
 }
 
