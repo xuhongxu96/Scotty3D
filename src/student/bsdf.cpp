@@ -8,7 +8,7 @@ static Vec3 reflect(Vec3 dir) {
 
     // TODO (PathTracer): Task 5
     // Return reflection of dir about the surface normal (0,1,0).
-    return Vec3{};
+    return Vec3{-dir.x, dir.y, -dir.z};
 }
 
 static Vec3 refract(Vec3 out_dir, float index_of_refraction, bool& was_internal) {
@@ -62,11 +62,11 @@ float BSDF_Lambertian::pdf(Vec3 out_dir, Vec3 in_dir) const {
 
 Scatter BSDF_Mirror::scatter(Vec3 out_dir) const {
 
-    // TODO (PathTracer): Task 5
+    // (PathTracer): Task 5
 
     Scatter ret;
-    ret.direction = Vec3();
-    ret.attenuation = Spectrum{};
+    ret.direction = reflect(out_dir);
+    ret.attenuation = reflectance;
     return ret;
 }
 
