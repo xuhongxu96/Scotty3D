@@ -58,7 +58,7 @@ Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
     // should modify time_bounds so that the ray does not intersect at time = 0. Remember to
     // set the new depth value.
     auto in_dir = hit.object_to_world.rotate(scatter.direction).unit();
-    Ray in_ray(hit.pos, -in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), hit.depth - 1);
+    Ray in_ray(hit.pos, in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), hit.depth - 1);
     auto [direct, indirect] = trace(in_ray);
 
     // (3) Add contribution due to incoming light scaled by BSDF attenuation. Whether you
@@ -95,7 +95,7 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     auto scatter = hit.bsdf.scatter(hit.out_dir);
     if(scatter.attenuation.luma() > 0.f) {
         auto in_dir = hit.object_to_world.rotate(scatter.direction).unit();
-        Ray in_ray(hit.pos, -in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), 0);
+        Ray in_ray(hit.pos, in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), 0);
         auto [direct, indirect] = trace(in_ray);
         if(!hit.bsdf.is_discrete()) {
             direct *= 1.f / hit.bsdf.pdf(hit.out_dir, scatter.direction);
