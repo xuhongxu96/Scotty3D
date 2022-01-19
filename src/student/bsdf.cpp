@@ -26,7 +26,28 @@ static Vec3 refract(Vec3 out_dir, float index_of_refraction, bool& was_internal)
     // and to do so you can simply find the direction that out_dir would refract
     // _to_, as refraction is symmetric.
 
-    return Vec3{};
+    auto cos_out = out_dir.y;
+    auto sin_out = sqrt(1 - cos_out * cos_out);
+
+    float ratio;
+    if(cos_out > 0) {
+        ratio = 1.f / index_of_refraction / index_of_refraction;
+    } else {
+        ratio = index_of_refraction * index_of_refraction;
+    }
+
+    if(ratio * sin_out >= 1) {
+        was_internal = true;
+        return {};
+    }
+
+    float sin_in = ratio * sin_out;
+    float cos_in = sqrt(1.f - sin_in * sin_in);
+
+    float xz_ratio = sin_in / sin_out;
+
+    was_internal = false;
+    return Vec3{-out_dir.x * xz_ratio, cos_out > 0 ? -cos_in : cos_in, -out_dir.z * xz_ratio};
 }
 
 Scatter BSDF_Lambertian::scatter(Vec3 out_dir) const {
@@ -81,21 +102,27 @@ Scatter BSDF_Glass::scatter(Vec3 out_dir) const {
     // Be wary of your eta1/eta2 ratio - are you entering or leaving the surface?
     // What happens upon total internal reflection?
 
+    // auto do_reflect = RNG::coin_flip(fresnel);
+
+    bool was_internal;
+
     Scatter ret;
-    ret.direction = Vec3();
-    ret.attenuation = Spectrum{};
+    ret.direction = refract(out_dir, index_of_refraction, was_internal);
+    ret.attenuation = was_internal ? Spectrum{} : transmittance;
     return ret;
 }
 
 Scatter BSDF_Refract::scatter(Vec3 out_dir) const {
 
-    // OPTIONAL (PathTracer): Task 5
+    // (PathTracer): Task 5
 
     // When debugging BSDF_Glass, it may be useful to compare to a pure-refraction BSDF
 
+    bool was_internal;
+
     Scatter ret;
-    ret.direction = Vec3();
-    ret.attenuation = Spectrum{};
+    ret.direction = refract(out_dir, index_of_refraction, was_internal);
+    ret.attenuation = was_internal ? Spectrum{} : transmittance;
     return ret;
 }
 
