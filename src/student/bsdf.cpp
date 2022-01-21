@@ -27,21 +27,22 @@ static Vec3 refract(Vec3 out_dir, float index_of_refraction, bool& was_internal)
     // _to_, as refraction is symmetric.
 
     auto cos_out = out_dir.y;
-    auto sin_out = sqrt(1 - cos_out * cos_out);
 
     float ratio;
     if(cos_out > 0) {
-        ratio = 1.f / index_of_refraction / index_of_refraction;
+        ratio = 1.f / index_of_refraction;
     } else {
-        ratio = index_of_refraction * index_of_refraction;
+        ratio = index_of_refraction;
     }
 
-    if(ratio * sin_out >= 1) {
+    auto sin_out = sqrt(1 - cos_out * cos_out);
+    float sin_in = ratio * sin_out;
+
+    if(sin_in >= 1) {
         was_internal = true;
         return {};
     }
 
-    float sin_in = ratio * sin_out;
     float cos_in = sqrt(1.f - sin_in * sin_in);
 
     float xz_ratio = sin_in / sin_out;
@@ -102,13 +103,22 @@ Scatter BSDF_Glass::scatter(Vec3 out_dir) const {
     // Be wary of your eta1/eta2 ratio - are you entering or leaving the surface?
     // What happens upon total internal reflection?
 
-    // auto do_reflect = RNG::coin_flip(fresnel);
+    auto cos_out = fabs(out_dir.y);
 
-    bool was_internal;
+    float n1 = 1.f;
+    float n2 = index_of_refraction;
+
+    float r0 = (n1 - n2) * (n1 - n2) / (n1 + n2) / (n1 + n2);
+    float fresnel = r0 + (1 - r0) * powf(1 - cos_out, 5.f);
+
+    auto do_reflect = RNG::coin_flip(fresnel);
+
+    bool was_internal = false;
 
     Scatter ret;
-    ret.direction = refract(out_dir, index_of_refraction, was_internal);
-    ret.attenuation = was_internal ? Spectrum{} : transmittance;
+    ret.direction =
+        do_reflect ? reflect(out_dir) : refract(out_dir, index_of_refraction, was_internal);
+    ret.attenuation = do_reflect ? reflectance : (was_internal ? Spectrum{} : transmittance);
     return ret;
 }
 
