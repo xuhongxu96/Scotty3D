@@ -47,11 +47,10 @@ Trace Sphere::hit(const Ray& ray) const {
         }
     }
 
-    ret.origin = ray.point;
-    ret.hit = true;                         // was there an intersection?
-    ret.distance = t;                       // at what distance did the intersection occur?
-    ret.position = ray.point + t * ray.dir; // where was the intersection?
-    ret.normal = ret.position.unit();       // what was the surface normal at the intersection?
+    ret.hit = true;                   // was there an intersection?
+    ret.distance = t;                 // at what distance did the intersection occur?
+    ret.position = ray.at(t);         // where was the intersection?
+    ret.normal = ret.position.unit(); // what was the surface normal at the intersection?
     return ret;
 }
 

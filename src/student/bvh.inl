@@ -71,7 +71,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
             float max_x = full_box.max.data[axis];
             float bucket_width = (max_x - min_x) / N_BUCKET;
 
-            if(bucket_width < FLT_EPSILON) continue;
+            if(bucket_width < EPS_F) continue;
 
             for(auto it = begin; it != end; ++it) {
                 BBox prim_box = it->bbox();

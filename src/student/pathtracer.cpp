@@ -45,26 +45,35 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
 
 Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
 
-    // TODO (PathTrace): Task 4
+    // (PathTrace): Task 4
 
     // This function computes a single-sample Monte Carlo estimate of the _indirect_
     // lighting at our ray intersection point.
 
     // (1) Randomly sample a new ray direction from the BSDF distribution using BSDF::scatter().
+    auto scatter = hit.bsdf.scatter(hit.out_dir);
+    if(scatter.attenuation.luma() == 0.f) return {};
 
     // (2) Create a new world-space ray and call Pathtracer::trace() to get incoming light. You
     // should modify time_bounds so that the ray does not intersect at time = 0. Remember to
     // set the new depth value.
+    auto in_dir = hit.object_to_world.rotate(scatter.direction).unit();
+    Ray in_ray(hit.pos, in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), hit.depth - 1);
+    auto [direct, indirect] = trace(in_ray);
 
     // (3) Add contribution due to incoming light scaled by BSDF attenuation. Whether you
     // compute the BSDF scattering PDF should depend on if the BSDF is a discrete distribution
     // (see BSDF::is_discrete()).
 
+    if(!hit.bsdf.is_discrete()) {
+        indirect *= 1.f / hit.bsdf.pdf(hit.out_dir, scatter.direction);
+    }
+
     // You should only use the indirect component of incoming light (the second value returned
     // by Pathtracer::trace()), as the direct component will be computed in
     // Pathtracer::sample_direct_lighting().
 
-    Spectrum radiance;
+    Spectrum radiance = indirect * scatter.attenuation;
     return radiance;
 }
 
@@ -77,12 +86,22 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // into the scene.
     Spectrum radiance = point_lighting(hit);
 
-    // TODO (PathTrace): Task 4
+    // (PathTrace): Task 4
 
     // For task 4, this function should perform almost the same sampling procedure as
     // Pathtracer::sample_indirect_lighting(), but instead accumulates the emissive component of
     // incoming light (the first value returned by Pathtracer::trace()). Note that since we only
     // want emissive, we can trace a ray with depth = 0.
+    auto scatter = hit.bsdf.scatter(hit.out_dir);
+    if(scatter.attenuation.luma() > 0.f) {
+        auto in_dir = hit.object_to_world.rotate(scatter.direction).unit();
+        Ray in_ray(hit.pos, in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), 0);
+        auto [direct, indirect] = trace(in_ray);
+        if(!hit.bsdf.is_discrete()) {
+            direct *= 1.f / hit.bsdf.pdf(hit.out_dir, scatter.direction);
+        }
+        radiance += direct * scatter.attenuation;
+    }
 
     // TODO (PathTrace): Task 6
 
@@ -132,7 +151,7 @@ std::pair<Spectrum, Spectrum> Pathtracer::trace(const Ray& ray) {
         result.normal = -result.normal;
     }
 
-    // TODO (PathTracer): Task 4
+    // (PathTracer): Task 4
     // You will want to change the default normal_colors in debug.h, or delete this early out.
     if(debug_data.normal_colors) return {Spectrum::direction(result.normal), {}};
 
