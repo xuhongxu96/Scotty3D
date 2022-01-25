@@ -21,24 +21,19 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
 
     Spectrum emissive, reflected;
 
-    for(size_t i = 0; i < n_samples; ++i) {
-        Samplers::Rect rect;
-        Vec2 sample_offset = rect.sample();
+    Samplers::Rect rect;
+    Vec2 sample_offset = rect.sample();
 
-        Ray ray = camera.generate_ray((xy + sample_offset) / wh - .5f);
-        ray.depth = max_depth;
+    Ray ray = camera.generate_ray((xy + sample_offset) / wh - .5f);
+    ray.depth = max_depth;
 
-        if(RNG::coin_flip(0.0005f)) log_ray(ray, 10.0f);
+    if(RNG::coin_flip(0.0005f)) log_ray(ray, 10.0f);
 
-        // Pathtracer::trace() returns the incoming light split into emissive and reflected
-        // components.
-        auto [emissive_i, reflected_i] = trace(ray);
-        emissive += emissive_i;
-        reflected += reflected_i;
-    }
-
-    emissive = emissive / static_cast<float>(n_samples);
-    reflected = reflected / static_cast<float>(n_samples);
+    // Pathtracer::trace() returns the incoming light split into emissive and reflected
+    // components.
+    auto [emissive_i, reflected_i] = trace(ray);
+    emissive += emissive_i;
+    reflected += reflected_i;
 
     return emissive + reflected;
 }
