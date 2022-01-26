@@ -64,6 +64,7 @@ private:
     std::atomic<size_t> completed_epochs;
 
     Spectrum trace_pixel(size_t x, size_t y);
+    Spectrum sample_lighting(const Shading_Info& hit);
     Spectrum sample_direct_lighting(const Shading_Info& hit);
     Spectrum sample_indirect_lighting(const Shading_Info& hit);
 

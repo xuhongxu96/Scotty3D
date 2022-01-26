@@ -38,6 +38,59 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     return emissive + reflected;
 }
 
+Spectrum Pathtracer::sample_lighting(const Shading_Info& hit) {
+    auto power_heuristic = [](int nf, float fp, int ng, float gp) {
+        float f = nf * fp, g = ng * gp;
+        return (f * f) / (f * f + g * g);
+    };
+
+    Spectrum radiance = point_lighting(hit);
+
+    Spectrum scatter_radiance;
+    auto scatter = hit.bsdf.scatter(hit.out_dir);
+    auto in_dir = hit.object_to_world.rotate(scatter.direction).unit();
+    if(scatter.attenuation.luma() > 0.f) {
+        Ray in_ray(hit.pos, in_dir, Vec2(EPS_F, std::numeric_limits<float>::max()), hit.depth - 1);
+        auto [direct, indirect] = trace(in_ray);
+
+        scatter_radiance += direct;
+        scatter_radiance += indirect;
+        scatter_radiance *= scatter.attenuation;
+
+        if(!hit.bsdf.is_discrete()) {
+            // bsdf sample
+            float light_pdf = area_lights_pdf(hit.pos, in_dir);
+            float bsdf_pdf = hit.bsdf.pdf(hit.out_dir, scatter.direction);
+            radiance += scatter_radiance * power_heuristic(1, bsdf_pdf, 1, light_pdf) / bsdf_pdf;
+        }
+    }
+
+    if(hit.bsdf.is_discrete()) {
+        radiance += scatter_radiance;
+        return radiance;
+    }
+
+    // light sample
+    auto dir_to_area_light = sample_area_lights(hit.pos).unit();
+    auto object_in_dir = hit.world_to_object.rotate(dir_to_area_light).unit();
+
+    Ray ray_to_area_light(hit.pos, dir_to_area_light,
+                          Vec2(EPS_F, std::numeric_limits<float>::max()), 0);
+    auto [direct, indirect] = trace(ray_to_area_light);
+
+    auto attenuation = hit.bsdf.evaluate(hit.out_dir, object_in_dir);
+    if(attenuation.luma() > 0.f) {
+        direct *= attenuation;
+
+        float light_pdf = area_lights_pdf(hit.pos, dir_to_area_light);
+        float bsdf_pdf = hit.bsdf.pdf(hit.out_dir, object_in_dir);
+
+        radiance += direct * power_heuristic(1, light_pdf, 1, bsdf_pdf) / light_pdf;
+    }
+
+    return radiance;
+}
+
 Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
 
     // (PathTrace): Task 4
@@ -108,19 +161,16 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
         return radiance;
     }
 
-    auto power_heuristic = [](int nf, float fp, int ng, float gp) {
-        float f = nf * fp, g = ng * gp;
-        return (f * f) / (f * f + g * g);
-    };
-
-    float light_pdf = area_lights_pdf(hit.pos, in_dir);
-    float bsdf_pdf = hit.bsdf.pdf(hit.out_dir, scatter.direction);
-    radiance += scatter_radiance * power_heuristic(1, bsdf_pdf, 1, light_pdf) / bsdf_pdf;
-
     // (2) Otherwise, we should randomly choose whether we get our sample from `BSDF::scatter`
     // or `Pathtracer::sample_area_lights`. Note that `Pathtracer::sample_area_lights` returns
     // a world-space direction pointing toward an area light. Choose between the strategies
     // with equal probability.
+    auto bsdf_pdf = hit.bsdf.pdf(hit.out_dir, scatter.direction);
+
+    if(RNG::coin_flip(0.5)) {
+        radiance += scatter_radiance / bsdf_pdf;
+        return radiance;
+    }
 
     auto dir_to_area_light = sample_area_lights(hit.pos).unit();
     auto object_in_dir = hit.world_to_object.rotate(dir_to_area_light).unit();
@@ -139,11 +189,8 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // source?
 
     direct *= hit.bsdf.evaluate(hit.out_dir, object_in_dir);
-
-    light_pdf = area_lights_pdf(hit.pos, dir_to_area_light);
-    bsdf_pdf = hit.bsdf.pdf(hit.out_dir, object_in_dir);
-
-    radiance += direct * power_heuristic(1, light_pdf, 1, bsdf_pdf) / light_pdf;
+    auto light_pdf = area_lights_pdf(hit.pos, dir_to_area_light);
+    radiance += direct / light_pdf;
 
     return radiance;
 }
@@ -191,7 +238,7 @@ std::pair<Spectrum, Spectrum> Pathtracer::trace(const Ray& ray) {
                         out_dir, result.normal,   ray.depth};
 
     // Sample and return light reflected through the intersection
-    return {{}, sample_direct_lighting(hit) + sample_indirect_lighting(hit)};
+    return {{}, sample_lighting(hit)};
 }
 
 } // namespace PT
