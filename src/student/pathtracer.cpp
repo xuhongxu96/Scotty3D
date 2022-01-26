@@ -126,8 +126,16 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // weighting. What is the PDF of our sample, given it could have been produced from either
     // source?
 
-    direct *= 2.f / (hit.bsdf.pdf(hit.out_dir, object_in_dir) +
-                     area_lights_pdf(hit.pos, dir_to_area_light));
+    auto power_heuristic = [](int nf, float fp, int ng, float gp) {
+        float f = nf * fp, g = ng * gp;
+        return (f * f) / (f * f + g * g);
+    };
+
+    float light_pdf = area_lights_pdf(hit.pos, dir_to_area_light);
+    float bsdf_pdf = hit.bsdf.pdf(hit.out_dir, object_in_dir);
+
+    auto weight = power_heuristic(1, light_pdf, 1, bsdf_pdf);
+    direct *= weight / light_pdf;
     direct *= hit.bsdf.evaluate(hit.out_dir, object_in_dir);
 
     radiance += direct;
