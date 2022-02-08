@@ -18,12 +18,14 @@ Vec2 Rect::sample() const {
 
 Vec3 Sphere::Uniform::sample() const {
 
-    // TODO (PathTracer): Task 7
+    // (PathTracer): Task 7
 
     // Generate a uniformly random point on the unit sphere.
     // Tip: start with Hemisphere::Uniform
-
-    return Vec3{};
+    Hemisphere::Uniform sampler;
+    auto res = sampler.sample();
+    res.y *= (RNG::coin_flip() ? 1.f : -1.f);
+    return res;
 }
 
 Sphere::Image::Image(const HDR_Image& image) {
