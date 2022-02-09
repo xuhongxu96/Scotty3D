@@ -7,7 +7,7 @@ namespace PT {
 
 Vec3 Env_Map::sample() const {
 
-    // TODO (PathTracer): Task 7
+    // (PathTracer): Task 7
 
     // First, implement Samplers::Sphere::Uniform so the following line works.
     // Second, implement Samplers::Sphere::Image and swap to image_sampler
@@ -32,11 +32,11 @@ Spectrum Env_Map::evaluate(Vec3 dir) const {
     // pixels in the enviornment image. You should bi-linearly interpolate the value
     // between the 4 nearest pixels.
 
-    auto cos_t = fabs(dir.y);
+    auto cos_t = std::clamp(-dir.y, -1.f, 1.f);
     auto sin_t = sqrtf(1 - cos_t * cos_t);
     auto t = acosf(cos_t);
 
-    auto cos_p = std::min(1.f, fabs(dir.x / sin_t));
+    auto cos_p = std::clamp(dir.x / sin_t, -1.f, 1.f);
     auto sin_p = dir.z /*/ sin_t*/;
     auto p = acosf(cos_p);
     if(sin_p < 0) {
