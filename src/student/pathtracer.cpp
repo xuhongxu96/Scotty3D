@@ -76,6 +76,7 @@ Spectrum Pathtracer::sample_lighting(const Shading_Info& hit) {
 
     Ray ray_to_area_light(hit.pos, dir_to_area_light,
                           Vec2(EPS_F, std::numeric_limits<float>::max()), 0);
+    if(RNG::coin_flip(0.0005f)) log_ray(ray_to_area_light, 10.0f, Spectrum(1, 0, 0));
     auto [direct, indirect] = trace(ray_to_area_light);
 
     auto attenuation = hit.bsdf.evaluate(hit.out_dir, object_in_dir);
